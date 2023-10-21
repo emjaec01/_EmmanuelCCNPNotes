@@ -1,0 +1,254 @@
+October 21,2023
+SD-WAN - Software Defined WAN
+SDWAN Components: (v means viptela)
+vManage - MGMT Plane: for configuration in GUI
+VSmart - Control Plane: for routing protocols such as BGP, OSPF, EIGRP
+vBond - Orchestration Plane: connects all other components together
+vEdge - Data Plane: for User Data Processed by Router
+
+Router:
+1. Data Plane
+2. Control Plane
+3. MGMT Plane
+4. Orchestration Plane
+
+From eve ng:
+Pag nag play na yung cloud
+SECUREcrt:
+kidlat, telnet, 100.0.0.130, port 32769
+
+Cloud:
+en
+conf t
+hostname google
+int lo0
+ip add 8.8.8.8 255.255.255.255
+exit
+int vlan 1
+no shut
+ip add 100.0.0.254 255.255.255.0
+router bgp 65001
+no synchro
+bgp log-neighbor-changes
+network 8.8.8.8 mask 255.255.255.255
+network 100.0.0.0 mask 255.255.255.0
+neighbor 100.0.0.107 remote-as 65001
+neighbor 100.0.0.109 remote-as 65001
+neighbor 100.0.0.111 remote-as 65001
+no auto-summary
+end
+wr
+
+cisco acquired viptela and meraki
+vManage- 100.0.0.101:
+user: admin
+pw: admin
+
+gear>configuration>templates (device status: out of sync)
+names:
+vEdgeTest: detach devices: Rivan-vEdge1-3
+ospf
+
+gear>configuration>templates (device status: in sync)
+feature> add template> vedge cloud >system
+Template name: VE-SYSTEM
+Description: VE-SYSTEM
+console baud rate(bps):9600
+
+feature> add template> vedge cloud >banner
+Template name: VE-BANNER
+Description: VE-BANNER
+Login Banner: Strictly for RIVAN Personnel Only
+MOTD Banner: Welcome to SDWAN
+
+SDWAN is secured because it requires VPN
+SDWAN has built-in VPN:
+VPN0
+VPN512
+VPN1
+
+
+feature> add template> vedge cloud >VPN
+Template name: BR-VE-VPN-VPN0
+Description: BR-VE-VPN-VPN0
+VPN: 0
+Name: Transport VPN
+ipv4 route: 0.0.0.0/0 Next Hop> + device specific: [ip_address_0_0]
+
+Template name: BR-VE-VPN-VPN512
+Description: BR-VE-VPN-VPN512
+VPN: 512
+Name: MGMT VPN
+
+feature> add template> vedge cloud >VPN Interface Ethernet
+Template name: BR-VE-VPNINT-VPN0-G0
+Description: BR-VE-VPNINT-VPN0-G0
+Shutdown: No
+Interface: ge0/0
+Ipv4 configuration: static
+Ipv4 address > device specific
+
+Tunnel Interface:
+Tunnel interface: On
+Color: biz-internet
+Allow Service:
+All: On
+SSH: On
+NETCONF: On
+
+NAT:On
+
+feature> add template> vedge cloud >VPN Interface Ethernet
+Template name: BR-VE-VPNINT-VPN512-ETH0
+Description: BR-VE-VPNINT-VPN512-ETH0
+Shutdown: No
+Interface: eth0
+ipv6 configuration: dynamic
+
+feature> add template> vedge cloud >BGP
+Template name: BR-VE-BGP-VPN0
+Description: BR-VE-BGP-VPN0
+Shutdown: No
+ASN: 650001
+IPv4 Unicast Address Family:
+Address Family: ipv4-unicast
+
+Neighbor:
+100.0.0.254
+remote asn: 650001
+more:
+address family: on
+address family: ipv4-unicast
+
+configuration>templates>create template>from feature:
+Device Model: vEdge Cloud
+Template name: BR-VE-TEMP
+Description: BR-VE-TEMP
+
+Basic Information:
+system: VE-SYSTEM
+Transport & Management VPN:
+VPN 0 *: BR-VE-VPN-VPN0
+BGP: BR-VE-BGP-VPN0
+VPN INTERFACE: BR-VE-VPNINT-VPN0-G0
+
+VPN 512 *: BR-VE-VPN-VPN512
+VPN INTERFACE: BR-VE-VPNINT-VPN512-ETH0
+
+VBANNER: VE-BANNER
+ 
+CREATE
+
+ATTACH DEVICES: RIVAN_vEdge1-3
+edit device template> RIVAN_vEdge1-3
+address(ip_address_0_0): 100.0.0.254
+Next>Configure Devices> check all devices>ok
+
+Site1:
+en
+conf t 
+hostname Site1
+no ip domain-lookup
+int f0/0
+no shut
+ip add 172.16.10.2 255.255.255.0
+exit
+int lo0
+no shut
+ip add 1.1.1.1 255.255.255.255
+exit
+router ospf 1
+network 172.16.10.0 0.0.0.255 area 0
+network 1.1.1.1 0.0.0.0 area 0
+end
+
+wr
+
+Site2:
+en
+conf t 
+hostname Site2
+no ip domain-lookup
+int f0/0
+no shut
+ip add 172.16.20.2 255.255.255.0
+exit
+int lo0
+no shut
+ip add 2.2.2.2 255.255.255.255
+exit
+router ospf 1
+network 172.16.20.0 0.0.0.255 area 0
+network 2.2.2.2 0.0.0.0 area 0
+end
+wr
+
+Site3:
+en
+conf t 
+hostname Site3
+no ip domain-lookup
+int f0/0
+no shut
+ip add 172.16.30.2 255.255.255.0
+exit
+int lo0
+no shut
+ip add 3.3.3.3 255.255.255.255
+exit
+router ospf 1
+network 172.16.30.0 0.0.0.255 area 0
+network 3.3.3.3 0.0.0.0 area 0
+end
+wr
+
+SecureCRT QuickConnect:
+site1: telnet:<100.0.0.xxx>port: 32777
+site2: telnet:<100.0.0.xxx>port: 32778
+site3: telnet:<100.0.0.xxx>port: 32779
+
+configuration>templates>Feature>add template>vpn
+Device Model: vEdge Cloud > VPN
+Template name: BR-VE-VPN-VPN1
+Description: BR-VE-VPN-VPN1
+VPN:1
+Name: Data VPN
+Ipv4 Route: 0.0.0.0/0
+VPN:
+Enable VPN: On
+
+configuration>templates>Feature>add template>
+Device Model: vEdge Cloud > VPN Interface Ethernet
+Template name: BR-VE-VPNINT-VPN1-G1
+Description: BR-VE-VPNINT-VPN1-G1
+Interface Name: ge0/1
+IPv4 Configuration: static
+IPv4 Address: vpn_if_ipv4 address
+
+configuration>templates>Feature>add template>
+Device Model: vEdge Cloud > VPN Interface Ethernet
+Template name: BR-VE-OSPF-VPN1
+Description: BR-VE-OSPF-VPN1
+Redistribute: omp
+Area: 0
+Interface Name: ge0/1
+Advanced:
+Default information Originate: On , Always: On
+
+OMP-overlay management protocol
+
+
+Edit BR-VE-TEMP
+Service VPN>
+VPN: vpn1
+OSPF: ospf
+vpn int: g1
+
+IPv4 Address(vpn_if_ipv4_address)
+172.16.x0.1/24
+
+x- Rivan-vEdge2
+172.16.20.1/24
+
+to Test:(Sites1-3)
+Ping 8.8.8.8 

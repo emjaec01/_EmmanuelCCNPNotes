@@ -1,0 +1,16 @@
+{
+"aironet": [
+  {
+	"host_ip": "10.51.10.3",
+	"hostname": "51-ATMwifi",
+	"username": "admin",
+	"password": "pass",
+	"ssid": "51-SolaireWIFI",
+	"authentication": "open",
+	"key-man": "wpa",
+	"wifi-pass": "C1sc0123",
+	"channel": "13",
+	"enc-mod": "tkip"
+  }
+ ]
+}

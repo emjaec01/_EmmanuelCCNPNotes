@@ -1,0 +1,455 @@
+CentOS VM
+yml file para utusan yung device
+python ang bakal
+
+nano <yml> para mabuksan ang file
+
+dhcp.yml para maping ng control node yung devices
+	-location ng dhcp.yml is rivan_ansible/dhcp.yml
+
+to play yml:
+ansible-playbook dhcp.yml
+
+CMD:
+route add 10.51.0.0 mask 255.255.0.0 10.51.1.4
+route add 200.0.0.0 mask 255.255.255.0 10.51.1.4
+route add 10.0.0.0 mask 255.0.0.0 10.51.1.4
+
+CCNP encor/enarsi D2:
+70% Enarsi that will be covered today
+Task1: end point configuration:
+
+p1:
+conf t
+int e0/0
+no shut
+ip add 10.2.1.101 255.255.255.0
+ip route 0.0.0.0 0.0.0.0 10.2.1.1
+
+p2:
+conf t
+int e1/0
+no shut
+ip add 10.2.1.102 255.255.255.0
+ip route 0.0.0.0 0.0.0.0 10.2.1.1
+
+
+EIGRP FUNDAMENTALS:
+
+metric= [K1*bandwidth+(k2*bandwidth)/256 -load+1*delay]*[K5/(reliability + K4)]
+metric = (BW+Delay x 256)
+
+Task2: Re-configure 64bit eigrp on d1/d2 and 32bit eigrp on r4:
+
+d1:
+sh ip route connected | inc C
+10.1.4.4/30
+10.2.1.0/24
+10.2.2.0/24
+192.168.1.128/27
+
+d1:
+conf t
+router eigrp CCNPSTYLE
+address-family ipv4 unicast autonomous-system 100
+network 10.1.4.4 0.0.0.3
+network 10.2.1.0 0.0.0.255
+network 10.2.2.0 0.0.0.255
+network 192.168.1.128 0.0.0.31
+
+d2:
+sh ip route connected | inc C
+10.1.4.8/30
+10.2.1.0/24
+10.2.2.0/24
+192.168.1.128/27
+
+d2:
+conf t
+router eigrp CCNPSTYLE
+address-family ipv4 unicast autonomous-system 100
+network 10.1.4.8 0.0.0.3
+network 10.2.1.0 0.0.0.255
+network 10.2.2.0 0.0.0.255
+network 192.168.1.128 0.0.0.31
+
+r4:
+conf t
+router eigrp 100
+no auto-summary
+network 10.1.4.8 0.0.0.3
+network 10.1.4.4 0.0.0.3
+end
+
+to check:
+sh ip eigrp neighbor
+sh ip eigrp topology
+sh ip protocols
+sh run | sec eigrp
+
+
+ENCOR:
+network 0.0.0.0 255.255.255.255
+
+Task3: Multi Area OSPF
+OSPF:
+cisco, juniper, palo alto, fortinet
+R3:
+conf t
+int lo0
+ip add 3.3.3.3 255.255.255.255
+router ospf 1
+network 10.1.1.4 0.0.0.3 area 0
+network 10.1.1.8 0.0.0.3 area 34
+network 3.3.3.3 0.0.0.0 area 0
+
+R2:
+conf t
+int lo0
+ip add 2.2.2.2 255.255.255.255
+router ospf 1
+network 10.1.1.4 0.0.0.3 area 0
+network 10.1.1.0 0.0.0.3 area 12
+network 2.2.2.2 0.0.0.0 area 0
+
+R4:
+conf t
+int lo0
+ip add 4.4.4.4 255.255.255.255
+router ospf 1
+network 10.1.1.8 0.0.0.3 area 34
+network 4.4.4.4 0.0.0.0 area 34
+
+R1:
+conf t
+int lo0
+ip add 1.1.1.1 255.255.255.255
+router ospf 1
+network 10.1.1.0 0.0.0.3 area 12
+network 1.1.1.1 0.0.0.0 area 12
+
+how to check OSPF:
+sh ip protocols
+sh ip ospf neighbors
+sh ip ospf database
+sh run | sec ospf
+
+how to troubleshoot OSPF:
+sh ip ospf neighbor
+Neighbor ID     Pri   State           Dead Time   Address         Interface
+10.1.1.5          1   FULL/BDR        00:00:33    10.1.1.5        Ethernet1/1
+4.4.4.4           1   FULL/BDR        00:00:37    10.1.1.10       Ethernet1/2
+
+
+
+findtheNetworkaddress:
+192.168.1.99/28=
+10.100.51.201/13=
+172.16.150.33/18=
+
+
+Task4:Implementing Route Redistribution:Merging EIGRP and OSPF routes at ASBR. R4
+EIGRP = racists!
+OSPF = kind
+
+dapat two way redistribution
+
+R4#sh int e1/0
+Ethernet1/0 is up, line protocol is up 
+  Hardware is AmdP2, address is aabb.cc00.0901 (bia aabb.cc00.0901)
+  Internet address is 10.1.4.5/30
+  MTU 1500 bytes, BW 10000 Kbit/sec, DLY 1000 usec, 
+     reliability 255/255, txload 1/255, rxload 1/255
+	 
+Redistribute OSPF into EIGRP:
+R4:
+conf t
+router eigrp 100
+redistribute ospf 1 metric 10000 100 255 1 1500
+
+D1#sr eigrp 
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area 
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP
+       + - replicated route, % - next hop override
+
+Gateway of last resort is not set
+
+      1.0.0.0/32 is subnetted, 1 subnets
+D EX     1.1.1.1 [170/307200] via 10.1.4.5, 00:01:57, Ethernet1/1
+      2.0.0.0/32 is subnetted, 1 subnets
+D EX     2.2.2.2 [170/307200] via 10.1.4.5, 00:01:57, Ethernet1/1
+      3.0.0.0/32 is subnetted, 1 subnets
+D EX     3.3.3.3 [170/307200] via 10.1.4.5, 00:01:57, Ethernet1/1
+      4.0.0.0/32 is subnetted, 1 subnets
+D EX     4.4.4.4 [170/307200] via 10.1.4.5, 00:01:57, Ethernet1/1
+      10.0.0.0/8 is variably subnetted, 10 subnets, 3 masks
+D EX     10.1.1.0/30 [170/307200] via 10.1.4.5, 00:01:57, Ethernet1/1
+D EX     10.1.1.4/30 [170/307200] via 10.1.4.5, 00:01:57, Ethernet1/1
+D EX     10.1.1.8/30 [170/307200] via 10.1.4.5, 00:01:57, Ethernet1/1
+D        10.1.4.8/30 [90/281856] via 192.168.1.130, 01:12:59, Vlan200
+                     [90/281856] via 10.2.2.2, 01:12:59, Vlan20
+                     [90/281856] via 10.2.1.2, 01:12:59, Vlan10
+
+Redistribute EIGRP into OSPF:
+R4:
+conf t
+router ospf 1
+redistribute eigrp 100 subnets
+
+
+R1:
+sr ospf
+R1#sr ospf
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area 
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP
+       a - application route
+       + - replicated route, % - next hop override
+
+Gateway of last resort is not set
+
+      2.0.0.0/32 is subnetted, 1 subnets
+O IA     2.2.2.2 [110/11] via 10.1.1.2, 00:23:50, Ethernet1/0
+      3.0.0.0/32 is subnetted, 1 subnets
+O IA     3.3.3.3 [110/21] via 10.1.1.2, 00:23:50, Ethernet1/0
+      4.0.0.0/32 is subnetted, 1 subnets
+O IA     4.4.4.4 [110/31] via 10.1.1.2, 00:23:50, Ethernet1/0
+      10.0.0.0/8 is variably subnetted, 8 subnets, 3 masks
+O IA     10.1.1.4/30 [110/20] via 10.1.1.2, 00:23:50, Ethernet1/0
+O IA     10.1.1.8/30 [110/30] via 10.1.1.2, 00:23:50, Ethernet1/0
+O E2     10.1.4.4/30 [110/20] via 10.1.1.2, 00:00:13, Ethernet1/0
+O E2     10.1.4.8/30 [110/20] via 10.1.1.2, 00:00:13, Ethernet1/0
+O E2     10.2.1.0/24 [110/20] via 10.1.1.2, 00:00:13, Ethernet1/0
+O E2     10.2.2.0/24 [110/20] via 10.1.1.2, 00:00:13, Ethernet1/0
+      192.168.1.0/27 is subnetted, 1 subnets
+O E2     192.168.1.128 [110/20] via 10.1.1.2, 00:00:13, Eth
+
+
+
+BGP
+COREbaba51(config)#router bgp 1
+COREbaba51(config-router)#network 10.0.0.0 mask 255.0.0.0 
+
+fb down bgp
+
+Task5:BGP(Border Gateway Protocol)
+What's an ASN?
+	-group of routers under the same administration of Network.
+	-if your company Own and ASN, you are RICH!
+
+types of ASN:
+Private AS: 64513-65535
+Public AS: 1-64512
+
+R1: BGP Peers:3
+conf t
+router bgp 1
+bgp log-neighbor-changes
+neighbor 208.8.8.4 remote-as 45
+neighbor 207.7.7.2 remote-as 2
+neighbor 209.9.9.3 remote-as 3
+network 208.8.8.0 Mask 255.255.255.0
+network 207.7.7.0 Mask 255.255.255.0
+network 209.9.9.0 Mask 255.255.255.0
+network 10.1.1.0 Mask 255.255.255.252
+
+
+ISP1: BGP Peers:3
+conf t
+router bgp 45
+bgp log-neighbor-changes
+neighbor 24.2.4.2 remote-as 2
+neighbor 45.4.5.5 remote-as 45
+neighbor 208.8.8.1 remote-as 1
+network 208.8.8.0 Mask 255.255.255.0
+network 45.4.5.0 Mask 255.255.255.0
+network 24.2.4.0 Mask 255.255.255.0
+network 44.44.44.44 Mask 255.255.255.255
+network 0.0.0.0
+!HowTOpretendYOUareISPinLab:
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 208.8.8.1
+
+end
+
+ISP2: BGP Peers:4
+conf t
+router bgp 2
+bgp log-neighbor-changes
+neighbor 25.2.5.5 remote-as 45
+neighbor 32.3.2.3 remote-as 3
+neighbor 207.7.7.1 remote-as 1
+neighbor 24.2.4.4 remote-as 45
+network 25.2.5.0 Mask 255.255.255.0
+network 32.3.2.0 Mask 255.255.255.0
+network 207.7.7.0 Mask 255.255.255.0
+network 24.2.4.0 Mask 255.255.255.0
+network 22.22.22.22 Mask 255.255.255.255
+network 0.0.0.0
+!HowTOpretendYOUareISPinLab:
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 207.7.7.1
+end
+
+ISP3:
+conf t
+router bgp 3
+bgp log-neighbor-changes
+neighbor 32.3.2.2 remote-as 2
+neighbor 35.3.5.5 remote-as 45
+neighbor 209.9.9.1 remote-as 1
+network 35.3.5.0 Mask 255.255.255.0
+network 32.3.2.0 Mask 255.255.255.0
+network 209.9.9.0 Mask 255.255.255.0
+network 33.33.33.33 Mask 255.255.255.255
+network 0.0.0.0
+!Fakeinternet
+ip route 0.0.0.0 0.0.0.0 null 0
+ip route 10.0.0.0 255.0.0.0 209.9.9.1
+end
+
+ISP4:
+conf t
+hostname google
+int lo 8
+	ip add 8.8.8.8 255.255.255.255
+router bgp 45
+bgp log-neighbor-changes
+neighbor 35.3.5.3 remote-as 3
+neighbor 25.2.5.2 remote-as 2
+neighbor 45.4.5.4 remote-as 45
+network 8.8.8.8 mask 255.255.255.255
+network 55.55.55.55 mask 255.255.255.255
+network 35.3.5.0 mask 255.255.255.0
+network 25.2.5.0 mask 255.255.255.0
+network 45.4.5.0 mask 255.255.255.0
+end
+
+how to check BGP Peering:
+sh ip bgp summary
+
+sh ip bgp 
+*   8.8.8.8/32       209.9.9.3                              0 3 45 i
+ *                    207.7.7.2                              0 2 45 i
+ *>                   208.8.8.4                              0 45 i
+ 
+ >  = greater than. best route.
+ 
+bgp peers - nakadikit
+network - bgp prefix v4
+
+
+CMD:
+ping 8.8.8.8
+route print
+default-route = 0.0.0.0
+
+
+R2#ping 8.8.8.8
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 8.8.8.8, timeout is 2 seconds:
+.....
+Success rate is 0 percent (0/5)
+R2#
+
+-------- This is good! default normal
+
+
+routing protocol
+static
+eigrp
+ospf
+bgp
+isis
+
+aggregation router:
+bgp cisco asr 1000 series (asr 1004)
+100Ge routing
+kaya 8000 routes
+
+cisco asa 1001 ospf to bgp (4000 routes)
+cisco isr 4331 =nasa bahay.
+
+bgp sa labas
+ospf sa gitna
+
+bgp: 8000 routes > ospf: 1 (O*E2)
+
+Task6: Why BGP and OSPF are soulmates/bestfriends
+R1:
+conf t
+router ospf 1
+default-information originate
+!pang connect ito to BGP
+
+R3:
+sh ip route ospf
+
+extraPogiPOINTS:
+P1/P2:
+conf t
+ip host d1.core1ph.com 10.2.1.1
+ip host r4up.core2ph.com 10.1.4.5
+ip host r3.rtrJapan.com 10.1.1.9
+ip host r2.rtfsingapore.net 10.1.1.5
+ip host r110ge.verizon.net 10.1.1.1
+ip host isp1-100ge.sing.net 208.8.8.4
+ip host dns.google.com 45.4.5.5
+
+how to troubleshoot:
+top suspects:
+R1
+R4
+
+command:
+R4:
+sh run | section ospf
+sh run | section eigrp
+
+R1:
+sh run | sec ospf
+sh run | sec bgp
+
+R1#sh ip route bgp
+Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP
+       D - EIGRP, EX - EIGRP external, O - OSPF, IA - OSPF inter area 
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, su - IS-IS summary, L1 - IS-IS level-1, L2 - IS-IS level-2
+       ia - IS-IS inter area, * - candidate default, U - per-user static route
+       o - ODR, P - periodic downloaded static route, H - NHRP, l - LISP
+       a - application route
+       + - replicated route, % - next hop override
+
+Gateway of last resort is 208.8.8.4 to network 0.0.0.0
+
+B*    0.0.0.0/0 [20/0] via 208.8.8.4, 00:43:54
+      8.0.0.0/32 is subnetted, 1 subnets
+B        8.8.8.8 [20/0] via 208.8.8.4, 00:42:19
+      22.0.0.0/32 is subnetted, 1 subnets
+B        22.22.22.22 [20/0] via 207.7.7.2, 00:42:50
+      24.0.0.0/24 is subnetted, 1 subnets
+B        24.2.4.0 [20/0] via 208.8.8.4, 00:43:54
+      25.0.0.0/24 is subnetted, 1 subnets
+B        25.2.5.0 [20/0] via 207.7.7.2, 00:42:50
+      32.0.0.0/24 is subnetted, 1 subnets
+B        32.3.2.0 [20/0] via 207.7.7.2, 00:42:50
+      33.0.0.0/32 is subnetted, 1 subnets
+B        33.33.33.33 [20/0] via 209.9.9.3, 00:42:24
+      35.0.0.0/24 is subnetted, 1 subnets
+B        35.3.5.0 [20/0] via 209.9.9.3, 00:42:24
+      44.0.0.0/32 is subnetted, 1 subnets
+B        44.44.44.44 [20/0] via 208.8.8.4, 00:43:54
+      45.0.0.0/24 is subnetted, 1 subnets
+B        45.4.5.0 [20/0] via 208.8.8.4, 00:43:54
+      55.0.0.0/32 is subnetted, 1 subnets
+B        55.55.55.55 [20/0] via 208.8.8.4, 00:42:19

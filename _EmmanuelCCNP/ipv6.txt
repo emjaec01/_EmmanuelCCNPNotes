@@ -1,0 +1,247 @@
+IPv6
+
+compression rules!
+0 sa harap- remove
+many zeros - use :: (can be used only once!)
+magkasunod na zeros - use 0:0
+
+1. a:c::/64
+2. ::/0
+3. fe80::a:0:0:f/64
+4. 2002:6500:0:3000::/64
+5. ::1/128
+6. ff00::beef:a00a:aa0:0:0/8 or ff00:0:0beef:a00a:aa0::/8
+
+
+128 bits
+
+Task7: configuring Basic IPv6 address:
+Method1: autoconfig
+P1:
+conf t
+ipv6 unicast-routing
+int e0/0
+ipv6 address autoconfig
+
+P2:
+conf t
+ipv6 unicast-routing
+int e1/0
+ipv6 address autoconfig
+
+how to check:
+do sh ipv6 int brief | ex down
+
+Method2: Extended UI(Unique Identifier)
+P1:
+conf t
+ipv6 unicast-routing
+int e0/0
+ipv6 address face:cafe:cafe:1111::/64 eui-64
+!eui-64. siya na bahala mag isip ng network address
+
+CREATING ALIAS:
+P1: note! assign to all devices also
+conf t
+alias exec f6 sh ipv6 int brief | ex adm
+
+P2:
+conf t
+ipv6 unicast-routing
+int e1/0
+ipv6 address face:cafe:cafe:1111::/64 eui-64
+!eui-64. siya na bahala mag isip ng network address
+
+Method3: Manual static ipv6 address
+P1:
+conf t
+ipv6 unicast-routing
+int e0/0
+ipv6 address fafa:dada:caca:baba::1111/64
+
+P2:
+conf t
+ipv6 unicast-routing
+int e1/0
+ipv6 address fafa:dada:caca:baba::2222/64
+
+
+
+R1:
+conf t
+ipv6 unicast-routing
+int e1/0
+ipv6 address f3f3:5050:c:0::1/64
+
+R2:
+conf t
+ipv6 unicast-routing
+int e1/2
+ipv6 address f3f3:5050:c:0::2/64
+
+int e1/1
+ipv6 address 2023:b4b4:c:0:2/64
+
+R3:
+conf t
+ipv6 unicast-routing
+int e1/1
+ipv6 address 2023:b4b4:c:0:1/64
+
+Task8: IPv6 BGP configuration
+
+
+sh ipv6 bgp summary
+
+
+R1#sh ipv6 route bgp
+IPv6 Routing Table - default - 16 entries
+Codes: C - Connected, L - Local, S - Static, U - Per-user Static route
+       B - BGP, HA - Home Agent, MR - Mobile Router, R - RIP
+       H - NHRP, I1 - ISIS L1, I2 - ISIS L2, IA - ISIS interarea
+       IS - ISIS summary, D - EIGRP, EX - EIGRP external, NM - NEMO
+       ND - ND Default, NDp - ND Prefix, DCE - Destination, NDr - Redirect
+       O - OSPF Intra, OI - OSPF Inter, OE1 - OSPF ext 1, OE2 - OSPF ext 2
+       ON1 - OSPF NSSA ext 1, ON2 - OSPF NSSA ext 2, ls - LISP site
+       ld - LISP dyn-EID, a - Application
+B   B:1:2:B::/64 [20/0]
+     via FE80::A8BB:CCFF:FE00:E31, Ethernet1/2
+B   B:1:4:B::/64 [20/0]
+     via FE80::A8BB:CCFF:FE00:F31, Ethernet1/1
+B   B:2:1:B::/64 [20/0]
+     via FE80::A8BB:CCFF:FE00:E31, Ethernet1/2
+B   B:2:4:B::/64 [20/0]
+     via FE80::A8BB:CCFF:FE00:E31, Ethernet1/2
+B   B:3:4:B::/64 [20/0]
+     via FE80::A8BB:CCFF:FE00:D31, Ethernet1/3
+B   B22::1/128 [20/0]
+     via FE80::A8BB:CCFF:FE00:E31, Ethernet1/2
+B   B33::1/128 [20/0]
+          
+R1#ping b55::1      
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to B55::1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 1/1/1 ms
+R1#
+
+R1#sh ipv6 ospf neighbor 
+
+            OSPFv3 Router with ID (1.1.1.1) (Process ID 6)
+
+Neighbor ID     Pri   State           Dead Time   Interface ID    Interface
+2.2.2.2           1   2WAY/DROTHER    00:00:35    9               Ethernet1/0
+R1#sh ipv6 ospf neighbor 
+
+            OSPFv3 Router with ID (1.1.1.1) (Process ID 6)
+
+Neighbor ID     Pri   State           Dead Time   Interface ID    Interface
+2.2.2.2           1   EXSTART/DR      00:00:34    9               Ethernet1/0
+R1#sh ipv6 ospf neighbor 
+
+            OSPFv3 Router with ID (1.1.1.1) (Process ID 6)
+
+Neighbor ID     Pri   State           Dead Time   Interface ID    Interface
+2.2.2.2           1   EXSTART/DR      00:00:30    9               Ethernet1/0
+R1#sh ipv6 ospf neighbor 
+
+            OSPFv3 Router with ID (1.1.1.1) (Process ID 6)
+
+Neighbor ID     Pri   State           Dead Time   Interface ID    Interface
+2.2.2.2           1   EXSTART/DR      00:00:39    9               Ethernet1/0
+R1#sh ipv6 ospf neighbor 
+
+            OSPFv3 Router with ID (1.1.1.1) (Process ID 6)
+
+Neighbor ID     Pri   State           Dead Time   Interface ID    Interface
+2.2.2.2           1   EXSTART/DR      00:00:38    9               Ethernet1/0
+R1#sh ipv6 ospf neighbor 
+
+            OSPFv3 Router with ID (1.1.1.1) (Process ID 6)
+
+Neighbor ID     Pri   State           Dead Time   Interface ID    Interface
+2.2.2.2           1   FULL/DR         00:00:38    9               Ethernet1/0
+R1#sh ipv6 ospf neighbor 
+
+            OSPFv3 Router with ID (1.1.1.1) (Process ID 6)
+
+Neighbor ID     Pri   State           Dead Time   Interface ID    Interface
+2.2.2.2           1   FULL/DR         00:00:38    9               Ethernet1/0
+R1#sh ipv6 ospf neighbor 
+
+            OSPFv3 Router with ID (1.1.1.1) (Process ID 6)
+
+Neighbor ID     Pri   State           Dead Time   Interface ID    Interface
+2.2.2.2           1   FULL/DR         00:00:38    9               Ethernet1/0
+R1#sh ipv6 ospf neighbor 
+
+            OSPFv3 Router with ID (1.1.1.1) (Process ID 6)
+
+Neighbor ID     Pri   State           Dead Time   Interface ID    Interface
+2.2.2.2           1   FULL/DR         00:00:39    9               Ethernet1/0
+R1#
+
+
+to check ipv6 route ospf
+sh ipv6 route ospf
+
+
+r4:
+sh ipv6 ospf neighbor
+
+gagana alng ang ipv6 tunnel pag working ipv4
+
+------------------------------------
+P1#ping 8.8.8.8
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 8.8.8.8, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 1/1/1 ms
+P1#traceroute 8.8.8.8
+Type escape sequence to abort.
+Tracing the route to 8.8.8.8
+VRF info: (vrf in name/id, vrf out name/id)
+  1 d1.core1ph.com (10.2.1.1) 1 msec 0 msec 1 msec
+  2 r4up.core2ph.com (10.1.4.5) 0 msec 0 msec 1 msec
+  3 r3.rtrJapan.com (10.1.1.9) 1 msec 1 msec 0 msec
+  4 r2.rtfsingapore.net (10.1.1.5) 0 msec 0 msec 1 msec
+  5 r110ge.verizon.net (10.1.1.1) 1 msec 1 msec 1 msec
+  6 isp1-100ge.sing.net (208.8.8.4) 1 msec 1 msec 1 msec
+  7 dns.google.com (45.4.5.5) 1 msec *  1 msec
+P1#
+-----------------------------------
+
+R1#sh ipv6 route bgp
+IPv6 Routing Table - default - 26 entries
+Codes: C - Connected, L - Local, S - Static, U - Per-user Static route
+       B - BGP, HA - Home Agent, MR - Mobile Router, R - RIP
+       H - NHRP, I1 - ISIS L1, I2 - ISIS L2, IA - ISIS interarea
+       IS - ISIS summary, D - EIGRP, EX - EIGRP external, NM - NEMO
+       ND - ND Default, NDp - ND Prefix, DCE - Destination, NDr - Redirect
+       O - OSPF Intra, OI - OSPF Inter, OE1 - OSPF ext 1, OE2 - OSPF ext 2
+       ON1 - OSPF NSSA ext 1, ON2 - OSPF NSSA ext 2, ls - LISP site
+       ld - LISP dyn-EID, a - Application
+B   B:1:2:B::/64 [20/0]
+     via FE80::A8BB:CCFF:FE00:E31, Ethernet1/2
+B   B:1:4:B::/64 [20/0]
+     via FE80::A8BB:CCFF:FE00:F31, Ethernet1/1
+B   B:2:1:B::/64 [20/0]
+     via FE80::A8BB:CCFF:FE00:E31, Ethernet1/2
+B   B:2:4:B::/64 [20/0]
+     via FE80::A8BB:CCFF:FE00:E31, Ethernet1/2
+B   B:3:4:B::/64 [20/0]
+     via FE80::A8BB:CCFF:FE00:D31, Ethernet1/3
+B   B22::1/128 [20/0]
+     via FE80::A8BB:CCFF:FE00:E31, Ethernet1/2
+B   B33::1/128 [20/0]
+     via FE80::A8BB:CCFF:FE00:D31, Ethernet1/3
+B   B44::1/128 [20/0]
+     via FE80::A8BB:CCFF:FE00:F31, Ethernet1/1
+B   B55::1/128 [20/0]
+     via FE80::A8BB:CCFF:FE00:F31, Ethernet1/1
+R1#
+
+
+sd-wan
+virtualization
+tunneling
