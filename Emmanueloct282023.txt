@@ -1,0 +1,162 @@
+IP PC - 99.0.0.10
+ping 99.0.0.10
+
+99.0.0.2 a1
+99.0.0.3 c1
+99.0.0.4 c2
+99.0.0.5 r1
+99.0.0.6 r2
+
+1.hugot. 10 sec. rapid press
+2. flash_init
+dir flash:
+
+vlan.dat - vlan DB
+config.text - config/pw db
+
+3. delete flash:vlan.dat
+rename flash:config.text flash:config.bak
+boot
+
+recover old configs but give new password:
+copy flash:config.bak run
+
+conf t
+int g0/1
+no shut
+
+
+task 2: how to jailbreak routers/voice gateways
+step1: if swerte, swerte. malas.malas
+ctrl + pause/break. 
+router/highen sws/linuxbased:
+normal:	0x2102 = remember password/config
+rommon 1> confreg 0x2142 = ignorepassword/config
+rommon 2> i = reboot
+^c 
+router>en
+router# copy start run
+r1#conf t
+enable secret password
+config-register 0x2102
+do wr
+
+green lang ayos
+
+task3: special cases if galing jailbreak:
+switch/router:
+all vlans are off!
+
+A1:
+conf t
+int vlan 1
+no shut
+
+
+
+TASK2: CCNP Investment:
+training + homeLab + encor + enarsi
+p1: ping 8.8.8.8
+p1: ping b55::1
+
+TASK3: how to know if someone has actual network t3 xp:
+1. makuha sa tingin:
+core: 10g/40g/100g
+distribution: 10g/40g/100g
+access: gi+4 10 gig
+2. access > coresw
+3. paano malalaman na bobo ang network engineer, search wireshark
+1. stp = pang mayaman
+2. ss = 24576 = matinik ccnplevel
+3. 32768 = bobo
+
+cost > priority > number
+
+Task4: skills need for CCNP switching
+skill1: trunking skills 
+types of port:
+1 access-port:
+	connects to all non-SW:
+	a1:
+	conf t
+	int f0/1
+	sw mo access
+	
+2 SVI:
+
+3 routed-port:
+c1:
+conf t
+int g0/1
+no switchport
+
+C1svi:
+conf t
+int vlan 1
+ip add 10.1.0.1 255.255.255.0
+no shut
+int vlan 10
+ip add 10.10.0.1 255.255.255.0
+no shut
+
+c2svi:
+conf t
+int vlan 1
+ip add 10.1.0.2 255.255.255.0
+no shut
+int vlan 10
+ip add 10.10.0.2 255.255.255.0
+no shut
+
+GO TRUNKINGGGGG
+
+
+skill2: stp skills
+skill3: rapid stp skills
+skill4: multiple install stp
+skill5: radiusconfig.
+
+
+RADIUS: Remote Access Dial-In User Service:
+Centralized login for all devices:
+bossing is linux/microsoft ng lahat ng cisco.
+
+Microsoft:
+CMD:
+compmgmt.msc
+
+ad ds
+active directory
+right click domain
+OU > radius cisco
+
+Network Policy:
+Client
+NETWORK DEVICES
+
+Policy
+RADIUSAAA
+ADD 
+WINDOWS GROUP
+DOMAIN ADMINS
+ACCESS GRANTED
+UNCHECK ALL EXCEPT PAP AND SPAP
+NO > NEXT > SERVICE-TYPE: EDIT: OTHERS: LOGIN
+VENDOR SPECIFIC: ADD > CISCO AV-PAIR 50000 > ATT. VALUE: shell:priv-lvl=15 (microsoft boss mo cisco)
+ECNRYPTION: UNCHECK ALL WITH "M" KASI Microsoft
+FINISH
+
+Cisco will give MS all the control:
+conf t
+username backup password passw
+aaa new-model
+radius-server host 10.1.0.10 key secret
+ip radius source-interface vlan1
+aaa authentication login default group radius local
+end
+
+
+sh radius statistics
+
+
+
